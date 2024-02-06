@@ -1,0 +1,111 @@
+mql5
+// Secret Sentiment TrendCatcher
+// Developer's site: forexroboteasy.com
+// Developed by Forex Robot Easy Team
+
+// Include necessary libraries
+#include <Trade\Trade.mqh>
+#include <Technical\Indicators\MovingAverages\MovingAverages.mqh>
+#include <Technical\Indicators\Oscillators\RSI.mqh>
+
+// Define constants
+#define BASIC_VERSION 1
+#define PRO_VERSION 2
+
+// Define input parameters
+input int version = BASIC_VERSION;
+
+// Declare global variables
+CTrade trade;
+CMovingAverages ma;
+CRSI rsi;
+
+// Initialize the Expert Advisor
+int OnInit()
+{
+    // Set up the trading environment
+    trade.SetExpertMagicNumber(Symbol() + Timeframe());
+    trade.SetExpertStopLoss(100); // Set a default stop loss of 100 pips
+    trade.SetExpertTakeProfit(200); // Set a default take profit of 200 pips
+    
+    return(INIT_SUCCEEDED);
+}
+
+// Start the Expert Advisor
+void OnTick()
+{
+    // Check the version selected by the user
+    if(version == BASIC_VERSION)
+    {
+        BasicVersion();
+    }
+    else if(version == PRO_VERSION)
+    {
+        ProVersion();
+    }
+}
+
+// Basic Version of the Secret Sentiment TrendCatcher
+void BasicVersion()
+{
+    double maValue = ma.iMA(NULL, 0, 14, 0, MODE_SMA, PRICE_CLOSE, 0); // Calculate the moving average
+    double rsiValue = rsi.iRSI(NULL, 0, 14, PRICE_CLOSE, 0); // Calculate the RSI value
+    
+    // Check for a bullish trend
+    if(CheckBullishTrend(maValue, rsiValue))
+    {
+        // Open a buy order
+        trade.Buy(Symbol(), 1, 0, 0, 'Bullish Trend');
+    }
+    // Check for a bearish trend
+    else if(CheckBearishTrend(maValue, rsiValue))
+    {
+        // Open a sell order
+        trade.Sell(Symbol(), 1, 0, 0, 'Bearish Trend');
+    }
+}
+
+// Pro Version of the Secret Sentiment TrendCatcher
+void ProVersion()
+{
+    // Get user-defined inputs
+    double maPeriod = InputDouble('Moving Average Period', 14);
+    double rsiPeriod = InputDouble('RSI Period', 14);
+    double stopLoss = InputDouble('Stop Loss (in pips)', 100);
+    double takeProfit = InputDouble('Take Profit (in pips)', 200);
+    
+    double maValue = ma.iMA(NULL, 0, maPeriod, 0, MODE_SMA, PRICE_CLOSE, 0); // Calculate the moving average
+    double rsiValue = rsi.iRSI(NULL, 0, rsiPeriod, PRICE_CLOSE, 0); // Calculate the RSI value
+    
+    // Check for a bullish trend
+    if(CheckBullishTrend(maValue, rsiValue))
+    {
+        // Open a buy order with user-defined inputs
+        trade.Buy(Symbol(), 1, stopLoss, takeProfit, 'Bullish Trend');
+    }
+    // Check for a bearish trend
+    else if(CheckBearishTrend(maValue, rsiValue))
+    {
+        // Open a sell order with user-defined inputs
+        trade.Sell(Symbol(), 1, stopLoss, takeProfit, 'Bearish Trend');
+    }
+}
+
+// Check for a bullish trend
+bool CheckBullishTrend(double maValue, double rsiValue)
+{
+    return (maValue > rsiValue);
+}
+
+// Check for a bearish trend
+bool CheckBearishTrend(double maValue, double rsiValue)
+{
+    return (maValue < rsiValue);
+}
+
+// Logical conclusion
+void OnDeinit(const int reason)
+{
+    // Close all open positions when the Expert Advisor is stopped or removed from the chart
+    trade.CloseAll();
+}
